@@ -33,3 +33,8 @@ class Cheat_Loaded_Dice(Player): # inheritance of Player
                 self.dice[i] += 1
             i += 1
 
+# Cheater class that uses d10's instead of d6's
+class Bigdice(Player):
+    def cheat(self):
+        for i in range(3):
+            self.dice.append(randint(1,10))
