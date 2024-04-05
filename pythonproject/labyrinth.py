@@ -7,6 +7,7 @@
 import time # I can't seem to write anything interactive without adding a delay here and there
 import random # If I can, I'd like to randomize bits of this program
 import os # I have a sneaking suspicion that this will be needed in order to make save files
+import labmap
 
 """ Objectives are going to go here, where they will be an ever-present reminder of how much more I need to do.
     1. Main menu
@@ -46,7 +47,7 @@ import os # I have a sneaking suspicion that this will be needed in order to mak
 # Our global variables and dictionaries will be here, to be referenced in the code below.
 ## Though, I'd like to just import them from a separate file to keep this as clean and simple as possible.
 intro_1 = f"You awaken in front of the labyrinth."
-intro_2 = f"You can control your movement in each section by typing the corresponding command displayed."
+intro_2 = f"You can control your movement in each room by typing the corresponding command displayed."
 intro_3 = f"Be aware... You are not the only one that moves within... "
 intro_options = ["yes", "no", "y", "n"]
 menu_1 = f"1. Enter the Labyrinth. "
@@ -54,12 +55,55 @@ menu_2 = f"2. Observe the area. "
 menu_3 = f"3. Open your pack. "
 menu_4 = f"4. Flee (End run and exit game). "
 menu_options = f"Please make your choice:\n{menu_1}\n{menu_2}\n{menu_3}\n{menu_4}\n"
-
+dungeon_map = labmap.sectors
+player_position = "A6"
 # Any sub-functions I want will be entered in this space, if not imported from another file.
+def intro_ready():
+    while True:
+        print(intro_1)
+        time.sleep(1)
+        print(intro_2)
+        time.sleep(1)
+        print(intro_3)
+        time.sleep(1)
+        response = input("Are you ready to begin? (yes/no): ").strip().lower()
+        if response in ["yes", "y"]:
+            print("We shall find out soon enough... ")
+            return True
+        elif response in ["no", "n"]:
+            print("Likely a wise choice for one such as you... Be gone.")
+            return False
+        else:
+            print("Invalid response. Please enter 'yes' or 'no'.")
 
+# Let's see which room the player is in
+def display_room_info(room):
+    print("You are in room", room)
+    print("Available exits: ")
+    for direction, destination in dungeon_map[room].items():
+        if destination != "Wall":
+            print(f"{direction}: {destination}")
+
+# Movement function goes here!
+def move_player(direction):
+    global player_position
+    if direction in dungeon_map[player_position]: # Is this a valid choice?
+        destination = dungeon_map[player_position][direction]
+        if destination != "Wall":
+            player_position = destination
+            print("You move", direction)
+            display_room_info(player_position)
+        else:
+            print("You cannot go that way. There's a wall blocking your path.")
+    else:
+        print("Invalid direction. Please choose a valid direction.")
 
 # Now the main course. The "Meat & Potatoes".
 def main():
+    while True:
+        if intro_ready():
+            break
+
     while True:
         print(intro_1)
         time.sleep(1)
@@ -68,14 +112,14 @@ def main():
         print(intro_2)
         time.sleep(1)
         print(intro_3)
-        intro_input = input("Are you ready to begin? (yes/no)\n").lower()
-        if intro_input != ["yes", "no"]:
-            print("Please make a valid selection. ")
-            continue
-        elif intro_input == "no":
-            print("Likely a wise choice for one such as you... Be gone.")
-            break
         time.sleep(1)
+        display_room_info(player_position)
+        user_input = input("Choose a direction, or type 'quit' to exit (North, South, East, West): ").strip().lower()
+        if user_input == "quit":
+            print("Exiting game.")
+            break
+        move_player(user_input)
+
 
 
 
