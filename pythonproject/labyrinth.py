@@ -6,10 +6,12 @@
 # Importing necessary methods and functions
 import time # I can't seem to write anything interactive without adding a delay here and there
 import random # If I can, I'd like to randomize bits of this program
-import os # I have a sneaking suspicion that this will be needed in order to make save files
-import labmap
+# Not in use import os # I have a sneaking suspicion that this will be needed in order to make save files
+import math # This will be used to calculate distance between minotaur and player, not currently in use
+import labmap # Here's our labyrinth (10x10 right now)
+import labyrinthclasses # Our "class" definitions for the player and the Minotaur
 
-""" Objectives are going to go here, where they will be an ever-present reminder of how much more I need to do.
+""" Objectives are going to go here, where they will be an ever-present reminder.
     1. Main menu
         1a. Should provide title, and a check for save-file
         1b. Should provide instructions for the game and prompt user to continue to menu
@@ -36,7 +38,7 @@ import labmap
         7b. Should create a save file with the user's character data, as well as that of the labyrinth
     8. Adventure Logs
         8a. Should be able to pull from save directory to give a brief overview of total adventure data
-        8b. Notable accomplishments?? (Moved through 50 rooms, defeated 20 monsters, etc.)
+        8b. Notable accomplishments?? (Moved through 51 rooms, defeated 20 monsters, etc.)
     9. Minotaur
         9a. Does minotaur stuff
         9b. "Chases" the player
@@ -49,14 +51,13 @@ import labmap
 intro_1 = f"You awaken in front of the labyrinth."
 intro_2 = f"You can control your movement in each room by typing the corresponding command displayed."
 intro_3 = f"Be aware... You are not the only one that moves within... "
-intro_options = ["yes", "no", "y", "n"]
-menu_1 = f"1. Enter the Labyrinth. "
-menu_2 = f"2. Observe the area. "
-menu_3 = f"3. Open your pack. "
-menu_4 = f"4. Flee (End run and exit game). "
-menu_options = f"Please make your choice:\n{menu_1}\n{menu_2}\n{menu_3}\n{menu_4}\n"
+
+# Here's how we tie-in our map
 dungeon_map = labmap.sectors
+
+# We have to set the initial player position, in our case that's A6
 player_position = "A6"
+
 # Any sub-functions I want will be entered in this space, if not imported from another file.
 def intro_ready():
     while True:
@@ -68,9 +69,11 @@ def intro_ready():
         time.sleep(1)
         response = input("Are you ready to begin? (yes/no): ").strip().lower()
         if response in ["yes", "y"]:
-            print("We shall find out soon enough... ")
+            time.sleep(1)
+            print("We'll find out soon enough... ")
             return True
         elif response in ["no", "n"]:
+            time.sleep(1)
             print("Likely a wise choice for one such as you... Be gone.")
             return False
         else:
@@ -79,9 +82,10 @@ def intro_ready():
 # Let's see which room the player is in
 def display_room_info(room):
     print("You are in room", room)
-    print("Available exits: ")
+    time.sleep(1)
+    print("Available moves: ")
     for direction, destination in dungeon_map[room].items():
-        if destination != "Wall":
+        if destination not in ["Wall", "Outwall"]:
             print(f"{direction}: {destination}")
 
 # Movement function goes here!
@@ -89,38 +93,53 @@ def move_player(direction):
     global player_position
     if direction in dungeon_map[player_position]: # Is this a valid choice?
         destination = dungeon_map[player_position][direction]
-        if destination != "Wall":
+        if destination not in ["Wall", "Outwall"]:
             player_position = destination
             print("You move", direction)
-            display_room_info(player_position)
         else:
-            print("You cannot go that way. There's a wall blocking your path.")
+            print("It appears there's a wall blocking your path.")
     else:
-        print("Invalid direction. Please choose a valid direction.")
+        print("That is not a valid move, please try again.")
 
 # Now the main course. The "Meat & Potatoes".
 def main():
+    player_name = input("Enter your name: ")
+    player = labyrinthclasses.Player(player_name, "A6", dungeon_map)
+    minotaur = labyrinthclasses.Minotaur("B1", dungeon_map)
+
     while True:
         if intro_ready():
             break
 
     while True:
-        print(intro_1)
-        time.sleep(1)
-        print("This is where the save check should go!")
-        time.sleep(1)
-        print(intro_2)
-        time.sleep(1)
-        print(intro_3)
-        time.sleep(1)
-        display_room_info(player_position)
-        user_input = input("Choose a direction, or type 'quit' to exit (North, South, East, West): ").strip().lower()
-        if user_input == "quit":
-            print("Exiting game.")
+        minotaur.moved_this_turn = False
+        display_room_info(player.position)
+        user_input = input("Choose a direction, or type 'quit' to exit (North, South, East, West): ").strip().title()
+        if user_input.lower() == "quit":
+            print("Giving up already, are we?")
+            time.sleep(1)
+            print("Exiting program...")
             break
-        move_player(user_input)
-
-
+        moved = player.move(user_input)
+        if moved:
+            # Minotaur moves one step towards the player
+            minotaur.move_towards_player(player.position)
+            print(f"The Minotaur has entered room {minotaur.position}")
+            if minotaur.check_player_collision(player.position):
+                print("The Minotaur caught you!")
+                player.decrease_health()
+                print(f"Your health: {player.health}")
+                if player.is_alive():
+                    print("Seems the Minotaur isn't done with you just yet...")
+                    minotaur.teleport_randomly()
+                else:
+                    print("The Minotaur has grown bored of this chase. Game over!")
+                    time.sleep(1)
+                    print(f"Distance travelled: {player.distance_travelled}")
+                    break
+            if minotaur.check_game_over():
+                print("The Minotaur caught you three times! Game Over!")
+                break
 
 
 # Obligatory "play nice" bit below
